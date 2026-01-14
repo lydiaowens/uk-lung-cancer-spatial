@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lung-cancer-spatial"
+version = "0.1.0"
+description = "Spatial CAR and GP models for UK lung cancer mortality"
+requires-python = ">=3.10"
+
+dependencies = [
+  "numpy",
+  "pandas",
+  "jax",
+  "jaxlib",
+  "numpyro",
+  "matplotlib",
+  "arviz",
+  "scipy"
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

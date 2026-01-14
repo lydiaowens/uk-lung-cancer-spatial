@@ -1,0 +1,25 @@
+
+"Mortality statistics - underlying cause, sex and age"
+"ONS Crown Copyright Reserved [from Nomis on 17 June 2025]"
+"Analysis   :","standard"
+"cause of death:","C33-C34 Malignant neoplasm of trachea, bronchus and lung"
+"Gender     :","Total"
+"Age        :","total (all ages)"
+"measure    :","Deaths"
+
+"region","mnemonic","2023"
+
+"North East","E12000001",1808
+"North West","E12000002",4236
+"Yorkshire and The Humber","E12000003",3022
+"East Midlands","E12000004",2498
+"West Midlands","E12000005",2865
+"East","E12000006",2679
+"London","E12000007",2422
+"South East","E12000008",3859
+"South West","E12000009",2663
+"Wales","W92000004",1816
+"Unknown or Abroad","Z",55
+"Column Total","Column Total",27923
+
+

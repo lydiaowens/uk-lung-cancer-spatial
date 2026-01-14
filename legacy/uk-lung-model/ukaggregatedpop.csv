@@ -1,0 +1,25 @@
+
+"Population estimates - local authority based by single year of age"
+"ONS Crown Copyright Reserved [from Nomis on 17 June 2025]"
+"Gender     :","Total"
+"Age        :","All Ages"
+
+"region","mnemonic","2023"
+
+"North East","E12000001",2711380
+"North West","E12000002",7600126
+"Yorkshire and The Humber","E12000003",5594125
+"East Midlands","E12000004",4991265
+"West Midlands","E12000005",6085687
+"East","E12000006",6468665
+"London","E12000007",8945309
+"South East","E12000008",9482507
+"South West","E12000009",5811259
+"Wales","W92000004",3164404
+"Scotland","S92000003",5490100
+"Northern Ireland","N92000002",-
+
+
+
+"-","These figures are missing."
+

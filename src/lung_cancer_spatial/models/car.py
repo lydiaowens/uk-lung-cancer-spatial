@@ -15,9 +15,10 @@ import jax.numpy as jnp
 import numpy as np
 import numpyro
 import numpyro.distributions as dist
+from jax.scipy.linalg import solve_triangular
 
 #Model Definition
-def car_model(y, E, A, Z = None): 
+def car_model(y, E, A, alpha_max, Z = None): 
     """
     Docstring for car_model
     
@@ -25,6 +26,7 @@ def car_model(y, E, A, Z = None):
     :param y: (n,) observed counts 
     :param E: (n,) expected counts/ offset (positive)
     :param A: (n,n) adjacency matrix
+    :param alpha_max: (float) maximum allowed value for alpha (from build_inputs.py)
     :param Z: (n,p) optional covaraite matrix 
 
     jitter Q_std added for numerical stability 
@@ -39,8 +41,13 @@ def car_model(y, E, A, Z = None):
 
     # 3. Parameters
     b0 = numpyro.sample('b0', dist.Normal(0, 1)) #global intercept on the log-risk scale
-    tau = numpyro.sample('tau', dist.Gamma(3, 2)) #precision parameter for spatial effects
-    alpha = numpyro.sample('alpha', dist.Uniform(0.01, 0.95)) #car dependency parameter
+
+    #tau = numpyro.sample('tau', dist.Gamma(3, 2)) #precision parameter for spatial effects
+
+    # Using sigma (standard deviation) directly is often more stable than tau (precision)
+    sigma = numpyro.sample('sigma', dist.HalfNormal(1.0)) #marginal standard deviation of spatial effects
+
+    alpha = alpha = numpyro.sample('alpha', dist.Uniform(0.0, alpha_max - 1e-4)) #car dependency parameter
     #alpha close to 1 means high spatial correlation
     
     #4. Options for covariates 
@@ -56,16 +63,16 @@ def car_model(y, E, A, Z = None):
     #Q_std must be symmetric positive definite, add jitter for numerical stability
     Q_std = Q_std + 1e-5 * jnp.eye(n)
 
-    #5. Spatial random effects
-    u_std = numpyro.sample(
-        "car_std",
-        dist.MultivariateNormal(
-            loc=jnp.zeros(n),
-            precision_matrix= Q_std
-        )
-    )
+    # We use the Cholesky decomposition of the Precision matrix Q
+    # Since Q = L @ L.T, then u_std = inv(L.T) @ z has precision Q
+    L = jnp.linalg.cholesky(Q_std)
 
-    sigma = numpyro.deterministic('sigma', 1. / jnp.sqrt(tau)) #marginal standard deviation of spatial effects
+    # Sample i.i.d. standard normal noise (The "Non-Centered" part)
+    z = numpyro.sample("z_u", dist.Normal(0, 1).expand([n]))
+
+    #5. Spatial random effects
+    u_std = solve_triangular(L.T, z, lower=False) #u_std ~ MVN(0, Q_std^{-1})
+    
 
     u = numpyro.deterministic("car", sigma * u_std) #Spatial effects on the log-risk scale
     #u captures spatial dependence between neighboring regions (not explained by covariates)
@@ -77,8 +84,17 @@ def car_model(y, E, A, Z = None):
     if Z is not None:
         eta = eta + jnp.dot(Z, beta)
 
+    # --- ADD THIS: Guardrails ---
+    # We "clip" the log-rate so it can't exceed safe limits.
+    # exp(12) is ~160,000, which is a massive relative risk. 
+    # This prevents the computer from seeing 'Infinity'.
+    eta = jnp.clip(eta, a_min=-20.0, a_max=12.0)
+
     #7. Poisson likelihood with offset 
     mu = E * jnp.exp(eta) #mean parameter of Poisson
+
+    #Safety mu if mu hits NaN or Inf due to extreme eta: 
+    mu = jnp.where(jnp.isfinite(mu), mu, 1e-6) #replace NaN/Inf with small number
     numpyro.sample("obs", dist.Poisson(mu), obs=y)
     rr = numpyro.deterministic("rr", jnp.exp(eta)) #relative risk (multiplicative increase in risk compared to baseline)
 

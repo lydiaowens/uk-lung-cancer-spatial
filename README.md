@@ -27,7 +27,7 @@ python -m lung_cancer_spatial.preprocessing.build_inputs \
   --out_dir data/processed
   ```
 
-##2. Running Model with Inputs 
+## 2. Running Model with Inputs 
 ### Running CAR model (population exposure version)
 ```bash 
 python -m lung_cancer_spatial.inference.run_car \
@@ -43,8 +43,8 @@ python -m lung_cancer_spatial.inference.run_car \
     Note: Version 3 of CAR model uses a sum-to-zero constraint of u_spatial to ensure spatial effects don't drift and adds a rho parameter from the Besag-York-Mollie (BYM) 2 model framework to help with divergence issues. The geometric mean scaling factor is assumed to be ~1. 
 
 
-### Misc. Code
-# Disease-mapping version (internal standardization) 
+## Misc. Code
+ Disease-mapping version (internal standardization) 
 
 ```bash
 python -m lung_cancer_spatial.preprocessing.build_inputs \
@@ -56,7 +56,7 @@ python -m lung_cancer_spatial.preprocessing.build_inputs \
 ``` 
 
 
-# Running CAR model (disease mapping/internal standardization) 
+ Running CAR model (disease mapping/internal standardization) 
 ```bash 
 python -m lung_cancer_spatial.inference.run_car \
   --inputs_npz data/processed/inputs_car_expected.npz \

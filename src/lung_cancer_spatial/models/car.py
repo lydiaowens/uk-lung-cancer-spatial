@@ -47,6 +47,10 @@ def car_model(y, E, A, alpha_max, Z = None):
     # Using sigma (standard deviation) directly is often more stable than tau (precision)
     sigma = numpyro.sample('sigma', dist.HalfNormal(1.0)) #marginal standard deviation of spatial effects
 
+    # rho: proportion of variance that is spatial (BYM2 parameter)
+    # rho = 1 is pure CAR, rho = 0 is pure random noise
+    rho = numpyro.sample('rho', dist.Beta(0.5, 0.5))
+
     alpha = alpha = numpyro.sample('alpha', dist.Uniform(0.0, alpha_max - 1e-4)) #car dependency parameter
     #alpha close to 1 means high spatial correlation
     
@@ -68,13 +72,16 @@ def car_model(y, E, A, alpha_max, Z = None):
     L = jnp.linalg.cholesky(Q_std)
 
     # Sample i.i.d. standard normal noise (The "Non-Centered" part)
-    z = numpyro.sample("z_u", dist.Normal(0, 1).expand([n]))
+    z_u = numpyro.sample("z_u", dist.Normal(0, 1).expand([n])) # Spatial noise
+    z_e = numpyro.sample("z_e", dist.Normal(0, 1).expand([n])) # Unstructured noise
 
     #5. Spatial random effects
-    u_std = solve_triangular(L.T, z, lower=False) #u_std ~ MVN(0, Q_std^{-1})
+    u_std = solve_triangular(L.T, z_u, lower=False) #u_std ~ MVN(0, Q_std^{-1})
     
+    #6. Sum to zero constraint 
+    u_std = u_std - jnp.mean(u_std) #enforce sum-to-zero constraint for identifiability
 
-    u = numpyro.deterministic("car", sigma * u_std) #Spatial effects on the log-risk scale
+    u = sigma * (jnp.sqrt(rho) * u_std + jnp.sqrt(1 - rho) * z_e) #Spatial effects on the log-risk scale
     #u captures spatial dependence between neighboring regions (not explained by covariates)
 
     #6. Log-relative risk (Linear predictor)
@@ -98,104 +105,64 @@ def car_model(y, E, A, alpha_max, Z = None):
     numpyro.sample("obs", dist.Poisson(mu), obs=y)
     rr = numpyro.deterministic("rr", jnp.exp(eta)) #relative risk (multiplicative increase in risk compared to baseline)
 
+    #Deterministic variables for monitoring
+    numpyro.deterministic("car_effect", u_std)
+    numpyro.deterministic("rr", jnp.exp(eta))
 
 
 """
-VARIABLE DEFINITIONS (Quick Reference)
--------------------------------------
+VARIABLE DEFINITIONS (Updated for BYM2 & Stability)
+--------------------------------------------------
 
-Inputs
-------
+Core Inputs
+-----------
 y : (n,)
-    Observed lung cancer case counts for each spatial region.
-
+    Observed lung cancer mortality counts for each UK district.
 E : (n,)
-    Expected counts / offset for each region (e.g., based on population
-    and baseline rates). Must be positive.
-
+    Expected counts (offset). Calculated in build_inputs.py as 
+    (District Population * National Baseline Rate).
 A : (n, n)
-    Binary adjacency matrix defining spatial neighborhood structure.
-    A[i, j] = 1 if regions i and j are neighbors, 0 otherwise.
-    Diagonal elements should be 0.
+    Adjacency matrix. A[i,j]=1 if districts share a border.
+alpha_max : float
+    The reciprocal of the maximum eigenvalue of the scaled adjacency matrix. 
+    Ensures the CAR precision matrix remains positive definite.
 
-Z : (n, p), optional
-    Covariate matrix. Each column represents a standardized covariate.
-    If None, the model is fit without covariates.
-
-Dimensions
-----------
-n : int
-    Number of spatial regions.
-
-p : int
-    Number of covariates (only defined if Z is provided).
-
-Adjacency-derived quantities
-----------------------------
-d : (n,)
-    Vector of neighborhood counts, where d[i] is the number of neighbors
-    of region i.
-
-D : (n, n)
-    Diagonal matrix with D[i, i] = d[i]. Used in construction of the
-    CAR precision matrix.
-
-Model parameters
-----------------
-b0 : float
-    Global intercept on the log-risk scale.
-    Represents baseline log-relative risk shared across all regions.
-
-tau : float
-    Precision parameter controlling the overall variability of the
-    spatial random effects.
-    Larger tau => smaller spatial variance.
-
-alpha : float
-    Spatial dependence parameter for the proper CAR model.
-    Values closer to 1 imply stronger spatial smoothing; values closer
-    to 0 imply weaker spatial dependence.
-
-beta : (p,), optional
-    Regression coefficients for covariates in Z.
-    Each beta_j represents the log-relative risk associated with
-    covariate j.
-
-Spatial structure
+Global Parameters
 -----------------
-Q_std : (n, n)
-    Standardized CAR precision matrix:
-        Q_std = D - alpha * A + jitter * I
-    Used as the precision matrix for the spatial random effects.
-    A small diagonal jitter is added for numerical stability.
-
-u_std : (n,)
-    Standardized spatial random effects drawn from:
-        MVN(0, Q_std^{-1})
-
+b0 : float
+    The 'Grand Mean' or global intercept. Represents the baseline 
+    log-relative risk for the entire UK study area.
 sigma : float
-    Marginal standard deviation of the spatial random effects.
-    Defined as sigma = 1 / sqrt(tau).
+    Total marginal standard deviation. Controls the overall 'strength' 
+    of the combined random effects (spatial + non-spatial).
+rho : float (0 to 1)
+    The BYM2 mixing parameter. 
+    - Near 1: Most of the unexplained risk is spatially clustered.
+    - Near 0: Most of the unexplained risk is random 'noise' (unstructured).
 
+Spatial & Noise Components
+--------------------------
+alpha : float
+    Spatial dependence parameter. Controls the 'smoothness' of the 
+    CAR component (u_std).
+z_u / z_e : (n,)
+    Standard Normal 'innovation' vectors. Used for non-centered 
+    re-parameterization to help the MCMC sampler avoid 'funnels.'
+u_std : (n,)
+    The 'Structured' spatial effect. It has been forced to sum-to-zero 
+    and follows the CAR neighborhood dependency logic.
 u : (n,)
-    Spatial random effects on the log-risk scale.
-    Captures residual spatial variation not explained by covariates.
+    The 'Combined' random effect. This is the final result of the 
+    BYM2 logic, incorporating both smooth trends and local outliers.
 
-Linear predictor and likelihood
--------------------------------
-eta : (n,)
-    Linear predictor (log-relative risk):
-        eta = b0 + u + Z @ beta  (if covariates are included)
-
-mu : (n,)
-    Mean parameter of the Poisson likelihood:
-        mu = E * exp(eta)
-
-Derived quantities
+Outputs & Insights
 ------------------
+eta : (n,)
+    The linear predictor in log-space: b0 + u + (optional) Z*beta.
+mu : (n,)
+    The predicted count: E * exp(eta).
 rr : (n,)
-    Relative risk for each region:
-        rr = exp(eta)
-    Represents multiplicative risk relative to baseline.
+    Relative Risk. An RR of 1.2 means that district has a 20% 
+    higher risk of lung cancer than the UK average after 
+    adjusting for population and covariates.
 """
-

@@ -27,7 +27,7 @@ python -m lung_cancer_spatial.preprocessing.build_inputs \
   --out_dir data/processed
   ```
 
-
+##2. Running Model with Inputs 
 ### Running CAR model (population exposure version)
 ```bash 
 python -m lung_cancer_spatial.inference.run_car \
@@ -38,13 +38,13 @@ python -m lung_cancer_spatial.inference.run_car \
   --chains 4
 ``` 
 ### Version Notes 
-  Note: Version 2 of CAR model was introduced with an spatial dependence parameter (alpha) Max contsraint and we replaced the standard Multivariate Normal (MVN) sampling with a manual "Cholesky" decomposition and a standard normal noise vector z_u.
+    Note: Version 2 of CAR model was introduced with an spatial dependence parameter (alpha) Max contsraint and we replaced the standard Multivariate Normal (MVN) sampling with a manual "Cholesky" decomposition and a standard normal noise vector z_u.
 
     Note: Version 3 of CAR model uses a sum-to-zero constraint of u_spatial to ensure spatial effects don't drift and adds a rho parameter from the Besag-York-Mollie (BYM) 2 model framework to help with divergence issues. The geometric mean scaling factor is assumed to be ~1. 
 
 
 ### Misc. Code
-## Disease-mapping version (internal standardization) 
+# Disease-mapping version (internal standardization) 
 
 ```bash
 python -m lung_cancer_spatial.preprocessing.build_inputs \
@@ -56,7 +56,7 @@ python -m lung_cancer_spatial.preprocessing.build_inputs \
 ``` 
 
 
-## Running CAR model (disease mapping/internal standardization) 
+# Running CAR model (disease mapping/internal standardization) 
 ```bash 
 python -m lung_cancer_spatial.inference.run_car \
   --inputs_npz data/processed/inputs_car_expected.npz \

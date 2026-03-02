@@ -8,6 +8,7 @@ import pandas as pd
 import geopandas as gpd
 from libpysal.weights import Queen
 import scipy.sparse.linalg as sla
+from sklearn import neighbors
 
 def build_inputs(
     shapefile_path: Path,
@@ -65,6 +66,28 @@ def build_inputs(
 
     # --- Build adjacency using aligned dataset ---
     w = Queen.from_dataframe(dataset)
+
+    # --- FIX: Connect Islands ---
+    neighbors = w.neighbors.copy()
+    # Identify indices of islands (those with 0 neighbors)
+    islands = [k for k, v in neighbors.items() if len(v) == 0]
+
+    for island_idx in islands:
+        # Find the nearest neighbor by distance using centroids
+        curr_geom = dataset.iloc[island_idx].geometry.centroid
+        distances = dataset.geometry.centroid.distance(curr_geom)
+        # Set its own distance to infinity so it doesn't pick itself
+        distances.iloc[island_idx] = np.inf
+        nearest_idx = distances.idxmin()
+    
+        # Manually link them in both directions
+        neighbors[island_idx] = [nearest_idx]
+        neighbors[nearest_idx].append(island_idx)
+
+        # Re-build the weight object with these manual links
+    from libpysal.weights import W
+    w = W(neighbors)
+
     A = w.full()[0].astype(np.float32)  # (n,n)
 
     # --- NEW: Calculate Alpha Max for Proper CAR ---

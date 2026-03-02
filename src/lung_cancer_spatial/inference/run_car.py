@@ -37,7 +37,7 @@ def run_car(
 
     numpyro.set_host_device_count(num_chains)
 
-    kernel = NUTS(car_model)
+    kernel = NUTS(car_model, target_accept_prob=0.95)
     mcmc = MCMC(
         kernel,
         num_warmup=num_warmup,
@@ -55,10 +55,49 @@ def run_car(
     else:
         mcmc.run(rng, y=y, E=E, A=A, Z=Z, alpha_max=alpha_max)
 
-    mcmc.print_summary()
+    # --- TECHNICAL DIAGNOSTICS DASHBOARD ---
+    # Convert to InferenceData to extract stats and metadata
+    idata = az.from_numpyro(mcmc)
+    
+    # Extract metadata for the title
+    n_chains = idata.posterior.dims['chain']
+    n_samples = idata.posterior.dims['draw']
+    # Warmup isn't stored in idata by default, so we use the argument passed to the function
+    
+    # Extract summary for global parameters
+    stats = az.summary(idata, var_names=["b0", "sigma", "rho", "alpha"])
+    max_rhat = stats["r_hat"].max()
+    divergences = int(idata.sample_stats.diverging.sum())
+    
+    print("\n" + "="*70)
+    print(f"MODEL DIAGNOSTICS | {out_nc.name}")
+    print(f"Config: {num_chains} chains | {num_warmup} warmup | {num_samples} samples")
+    print("="*70)
+    
+    # Header for the table
+    print(f"{'PARAMETER':<12} | {'MEAN':>8} | {'R-HAT':>8} | {'ESS_BULK':>10}")
+    print("-" * 70)
+    
+    for param in ["rho", "sigma", "alpha", "b0"]:
+        mean = stats.loc[param, "mean"]
+        rhat = stats.loc[param, "r_hat"]
+        ess  = stats.loc[param, "ess_bulk"]
+        print(f"{param:<12} | {mean:>8.3f} | {rhat:>8.3f} | {int(ess):>10}")
+
+    print("-" * 70)
+    
+    # Stability and Divergence Checks
+    status = "PASS" if (max_rhat < 1.05 and divergences == 0) else "WARNING"
+    print(f"STABILITY CHECK: {status}")
+    print(f"MAX R-HAT:       {max_rhat:.3f}")
+    print(f"DIVERGENCES:     {divergences}")
+    
+    # Calculate Spatial Contribution
+    rho_mean = stats.loc["rho", "mean"]
+    print(f"SPATIAL FRACTION (ρ): {rho_mean:.2%} of variance is spatially structured.")
+    print("="*70 + "\n")
 
     print(f"💾 Saving ArviZ NetCDF → {out_nc}")
-    idata = az.from_numpyro(mcmc)
     idata.to_netcdf(out_nc)
 
     if save_pkl:
@@ -67,7 +106,7 @@ def run_car(
         samples = mcmc.get_samples(group_by_chain=True)
         with open(out_pkl, "wb") as f:
             pickle.dump(samples, f)
-        print(f"📦 Also saved raw samples → {out_pkl}")
+        print(f"📦 Samples archived → {out_pkl}")
 
     print("✅ Done.")
 

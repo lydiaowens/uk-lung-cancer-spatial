@@ -107,7 +107,6 @@ def car_model(y, E, A, alpha_max, Z = None):
 
     #Deterministic variables for monitoring
     numpyro.deterministic("car_effect", u_std)
-    numpyro.deterministic("rr", jnp.exp(eta))
 
 
 """

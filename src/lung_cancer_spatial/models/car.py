@@ -103,7 +103,7 @@ def car_model(y, E, A, alpha_max, Z = None):
     #Safety mu if mu hits NaN or Inf due to extreme eta: 
     mu = jnp.where(jnp.isfinite(mu), mu, 1e-6) #replace NaN/Inf with small number
     numpyro.sample("obs", dist.Poisson(mu), obs=y)
-    rr = numpyro.deterministic("rr", jnp.exp(eta)) #relative risk (multiplicative increase in risk compared to baseline)
+    rr = numpyro.deterministic("rr", jnp.exp(eta)) #predicted rate relative to expected (relative risk)
 
     #Deterministic variables for monitoring
     numpyro.deterministic("car_effect", u_std)

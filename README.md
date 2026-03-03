@@ -1,18 +1,22 @@
 # Modeling lung cancer mortality in the UK using Bayesian GP and CAR methods 
 
-## Project Structure
-
-data/
-  raw/
-  processed/
-outputs/
-src/lung_cancer_spatial/
-  preprocessing/
-  models/
-  inference/
-  viz/
-
 ---
+# Latest Versions: 
+CAR model: Version 3, located in car.py 
+GP model: Version 1, located in gp.py 
+
+# Maps: 
+## CAR Model: 
+  Three maps were developed for the CAR model to understand estimated relative risk, hotspot probability, and model uncertainty. 
+  1. Estimated Relative Risk (v3_map_mean_rr.png)
+    This map shows the geographic multiplier of lung cancer risk. Values near 1 (shown in white and gray) show that the risk in that district is exactly the national average, while values above 1.0 in red show LADs with elevated risk. An RR of 1.5 means this LAD experiences 50% more cases than expected. Districts with values below 1 have a "protective" effect or lower than average risk of lung cancer mortality. 
+  
+  2. Hotspot Probability (v3_map_exceedance.png)
+    This map shows the Bayesian "Exceedance Probability", which measures how certain the model is that a district is a true hotspot of lung cancer mortality. Specifically, it shows the probability of the relative risk being above 1 (P(RR>1.0)). Values 0.95-1.0 are highlighted in dark red while values 0.0-0.05 are in white, with yellow districts being inconclusive.
+
+  3. Model Uncertainty (v3_map_uncertainty.png)
+    This map shows the standard deviation of the Relative Risk estimates for each LAD by illustrating the posterior standard deviation. Areas with high uncertainty (usually corresponding with low population districts) are in dark purple, while areas in light purple/white are high precision areas. 
+
 
 ## 1. Build Processed Inputs
 ### Disease-mapping (population exposure model)

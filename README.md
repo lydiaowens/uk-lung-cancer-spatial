@@ -119,7 +119,7 @@ python scripts/gp_generate_report.py --version v3
     
     Gaussian Process (Distance-Continuous)V1 Legacy: The initial GP used a Squared Exponential (RBF) kernel with a LogNormal(1000, 0.5) prior on the length-scale. Because the coordinates were standardized, this prior was mismatched with the data scale, causing the model to overfit the local noise (the "nugget" effect) rather than the regional signal.
     
-    Refinement to V2: I have pivoted to a Matérn 3/2 kernel. This is a more robust choice for public health data as it allows for slightly "rougher" transitions, preventing the over-oscillations seen in the RBF version. I also re-scaled the length-scale prior to align with the standardized coordinate space, and used a Poisson likelihood with exposure.
+    Refinement to V3: I have pivoted to a Matérn 3/2 kernel. This is a more robust choice for public health data as it allows for slightly "rougher" transitions, preventing the over-oscillations seen in the RBF version. I also re-scaled the length-scale prior to align with the standardized coordinate space, and used a Poisson likelihood with exposure.
     
-    Result: This V2 GP now produces a "smoothed" risk surface that captures the industrial corridors of the North without hugging every individual district's data point, making it a much more credible comparison to the CAR results.
+    Result: This V3 GP now produces a "smoothed" risk surface that captures the industrial corridors of the North without hugging every individual district's data point, making it a much more credible comparison to the CAR results.
 </details>

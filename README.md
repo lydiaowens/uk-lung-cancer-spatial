@@ -107,7 +107,7 @@ python scripts/gp_generate_report.py --version v3
     --samples 2000 \
     --chains 4
     ```
-
+</details>
 
 <details>
   <summary> Version History </summary>
@@ -122,3 +122,4 @@ python scripts/gp_generate_report.py --version v3
     Refinement to V2: I have pivoted to a Matérn 3/2 kernel. This is a more robust choice for public health data as it allows for slightly "rougher" transitions, preventing the over-oscillations seen in the RBF version. I also re-scaled the length-scale prior to align with the standardized coordinate space, and used a Poisson likelihood with exposure.
     
     Result: This V2 GP now produces a "smoothed" risk surface that captures the industrial corridors of the North without hugging every individual district's data point, making it a much more credible comparison to the CAR results.
+</details>

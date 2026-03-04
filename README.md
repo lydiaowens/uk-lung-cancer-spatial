@@ -4,7 +4,7 @@
 ### Latest Versions: 
 CAR model: Version 3, located in car.py 
 
-GP model: Version 1, located in gp.py 
+GP model: Version 3, located in gp.py 
 
 # CAR Model: 
 ## Maps: 
@@ -48,12 +48,37 @@ python scripts/car_generate_report.py \
     --filename car_model_report_v3.pdf \
     --warmup 1500
 ```
+# GP Model: 
+## Maps: 
+Three maps were developed for the GP model to visualize the continuous spatial risk surface, hotspot probability, and posterior precision. Unlike the CAR model, these maps highlight risk that "flows" across administrative boundaries based on geographic distance.
+
+1. Estimated Relative Risk (gp_map_v3_rr_final.png)
+2. Hotspot Probability (gp_map_v3_exceedance_final.png)
+3. Model Uncertainty (gp_map_v3_uncertainty_final.png)
+
+## Code: 
+### 2. Running Model with Inputs 
+#### Running GP model 
+```bash 
+python src/lung_cancer_spatial/inference/run_gp.py \
+    --version v3 \
+    --warmup 2000 \
+    --samples 2000 \
+    --chains 3 \
+    --target_accept 0.95
+```
+
+### 3. Reporting Model Results 
+#### Generating GP Model Report 
+python src/lung_cancer_spatial/visualization/gp_generate_report.py --version v3
 
 
 ### Version Notes 
-> **Version 2**: Note: Version 2 of CAR model was introduced with an spatial dependence parameter (alpha) Max contsraint and we replaced the standard Multivariate Normal (MVN) sampling with a manual "Cholesky" decomposition and a standard normal noise vector z_u.
+> **CAR Version 2**: Note: Version 2 of CAR model was introduced with an spatial dependence parameter (alpha) Max contsraint and we replaced the standard Multivariate Normal (MVN) sampling with a manual "Cholesky" decomposition and a standard normal noise vector z_u.
 >
-> **Version 3**:  Note: Version 3 of CAR model uses a sum-to-zero constraint of u_spatial to ensure spatial effects don't drift and adds a rho parameter from the Besag-York-Mollie (BYM) 2 model framework to help with divergence issues. The geometric mean scaling factor is assumed to be ~1. Spatial connectivity was enforced by identifying topological islands in the UK and manually bridging them to the nearest mainlaind centroids to ensure a non-singular precision matrix and enable Cholesky factorization. 
+> **CAR Version 3**:  Note: Version 3 of CAR model uses a sum-to-zero constraint of u_spatial to ensure spatial effects don't drift and adds a rho parameter from the Besag-York-Mollie (BYM) 2 model framework to help with divergence issues. The geometric mean scaling factor is assumed to be ~1. Spatial connectivity was enforced by identifying topological islands in the UK and manually bridging them to the nearest mainlaind centroids to ensure a non-singular precision matrix and enable Cholesky factorization. 
+
+> **GP Version 3**: Note: Version 3 of GP model transitions from RBF to a Matern 3/2 kernel to prevent overfitting seen in legacy iterations. To ensure numerical stability and convergence, the model uses an increased diagonal jitter (1x10^-4) and utilizes a dense mass matrix during NUTS sampling to account for high posterior correlation between length-scale and variance parameters. Coordinates are standardized to align with Gamma(3,2) length-scale prior, ensuring the identified spatial clusters remain physically meaningful.
 
 
 <details>
@@ -80,3 +105,17 @@ python scripts/car_generate_report.py \
     --samples 2000 \
     --chains 4
     ```
+
+<details>
+  <summary> Version History </summary>
+    The Model Evolution: From Baseline to V3/V2CAR Model (Neighborhood-Discrete)V1/V2 Baseline: 
+    
+    Initially utilized a standard CAR prior with a generic precision matrix. While it captured broad regional trends, the mixing of spatial and unstructured noise was unconstrained, making it difficult to quantify how much of the lung cancer risk was truly "geographic."Refinement to V3: I moved to a BYM2 (Besag-York-Mollié) formulation. This allowed for the introduction of the $\rho$ (rho) parameter to explicitly partition the variance. I also enforced a sum-to-zero constraint on the spatial effects for identifiability.
+    
+    Result: This transition produced a much more stable model with a clear spatial fraction of 0.985, providing the statistical "green light" to move forward with covariate analysis.
+    
+    Gaussian Process (Distance-Continuous)V1 Legacy: The initial GP used a Squared Exponential (RBF) kernel with a LogNormal(1000, 0.5) prior on the length-scale. Because the coordinates were standardized, this prior was mismatched with the data scale, causing the model to overfit the local noise (the "nugget" effect) rather than the regional signal.
+    
+    Refinement to V2: I have pivoted to a Matérn 3/2 kernel. This is a more robust choice for public health data as it allows for slightly "rougher" transitions, preventing the over-oscillations seen in the RBF version. I also re-scaled the length-scale prior to align with the standardized coordinate space, and used a Poisson likelihood with exposure.
+    
+    Result: This V2 GP now produces a "smoothed" risk surface that captures the industrial corridors of the North without hugging every individual district's data point, making it a much more credible comparison to the CAR results.

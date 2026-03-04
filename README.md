@@ -70,7 +70,9 @@ python src/lung_cancer_spatial/inference/run_gp.py \
 
 ### 3. Reporting Model Results 
 #### Generating GP Model Report 
-python src/lung_cancer_spatial/visualization/gp_generate_report.py --version v3
+```bash
+python scripts/gp_generate_report.py --version v3
+```
 
 
 ### Version Notes 
@@ -105,6 +107,7 @@ python src/lung_cancer_spatial/visualization/gp_generate_report.py --version v3
     --samples 2000 \
     --chains 4
     ```
+
 
 <details>
   <summary> Version History </summary>

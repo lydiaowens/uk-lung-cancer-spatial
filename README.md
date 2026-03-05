@@ -40,6 +40,16 @@ python -m lung_cancer_spatial.inference.run_car \
   --samples 2000 \
   --chains 4
 ``` 
+#### Running CAR model (Smoking and Gender Covariate Version)
+```bash 
+python src/lung_cancer_spatial/inference/run_car_v4.py \
+    --warmup 2000 \
+    --samples 2000 \
+    --chains 4 \
+    --out_dir /Users/alydiaowens/Projects/uk-lung-cancer-spatial/outputs \
+    --adj data/processed/spatial_structure.pkl
+```
+
 ### 3. Reporting Model Results 
 #### Generating CAR Model Report (Population Exposure version)
 ```bash
@@ -48,6 +58,14 @@ python scripts/car_generate_report.py \
     --filename car_model_report_v3.pdf \
     --warmup 1500
 ```
+#### Generating CAR Model Report (Smoking and Gender Covariate Version)
+```bash 
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src && \
+python scripts/car_generate_report_v4.py \
+    --input_nc /Users/alydiaowens/Projects/uk-lung-cancer-spatial/outputs/idata_car_v4.nc \
+    --metadata data/processed/v4_scaling_metadata.pkl
+```
+
 # GP Model: 
 ## Maps: 
 Three maps were developed for the GP model to visualize the continuous spatial risk surface, hotspot probability, and posterior precision. Unlike the CAR model, these maps highlight risk that "flows" across administrative boundaries based on geographic distance.

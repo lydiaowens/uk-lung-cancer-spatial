@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 import pandas as pd
 import numpyro
-from numpyro.infer import MCMC, NUTS
+from numpyro.infer import MCMC, NUTS, init_to_median
 import arviz as az
 import pickle
 
@@ -41,13 +41,16 @@ def run_car_v4(
     # 4. Configure MCMC
     # Set host device count to num_chains to run in parallel
     numpyro.set_host_device_count(num_chains)
-    kernel = NUTS(car_model, target_accept_prob=target_accept)
+    kernel = NUTS(car_model, 
+                  target_accept_prob=target_accept,
+                    max_tree_depth=8, dense_mass=True,
+                      init_strategy=init_to_median)
     mcmc = MCMC(
         kernel,
         num_warmup=num_warmup,
         num_samples=num_samples,
         num_chains=num_chains,
-        progress_bar=True,
+        progress_bar=True
     )
 
     # 5. Run Inference
@@ -83,6 +86,7 @@ if __name__ == "__main__":
     parser.add_argument("--warmup", type=int, default=2000)
     parser.add_argument("--samples", type=int, default=2000)
     parser.add_argument("--chains", type=int, default=4)
+    parser.add_argument("--target_accept", type=float, default=0.85)
     parser.add_argument("--seed", type=int, default=42)
     
     args = parser.parse_args()
@@ -94,5 +98,6 @@ if __name__ == "__main__":
         seed=args.seed,
         num_warmup=args.warmup,
         num_samples=args.samples,
-        num_chains=args.chains
+        num_chains=args.chains,
+        target_accept=args.target_accept
     )

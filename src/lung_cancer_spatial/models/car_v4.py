@@ -43,9 +43,9 @@ def car_model(y, E, A, alpha_max, bsmoke, bmen, binteraction):
     # 1. Shape Logic
     n_obs = y.shape[0]    # 636
     n_lads = A.shape[0]   # 318
+    d = jnp.sum(A, axis=1) # Degree vector for the adjacency matrix
+    lambda_max = jnp.max(jnp.linalg.eigvalsh(A))  # Spectral radius for standardization
 
-    # 2. Degree matrix (Matching V3)
-    d = jnp.sum(A, axis=1) 
 
     # 3. Fixed Effects (New V4 Betas)
     # Informative priors (Log-Relative Risk Scale)
@@ -53,7 +53,7 @@ def car_model(y, E, A, alpha_max, bsmoke, bmen, binteraction):
     # This helps regularize the estimates and prevent overfitting, especially given the limited number of districts (318) and the complexity of the spatial model.
     b0 = numpyro.sample('b0', dist.Normal(0, 0.5)) 
     beta_smoke = numpyro.sample('beta_smoke', dist.Normal(0, 0.2))  
-    beta_men = numpyro.sample('beta_men', dist.Normal(0, 0.5))
+    beta_men = numpyro.sample('beta_men', dist.Normal(0, 0.2))
     beta_interaction = numpyro.sample('beta_interaction', dist.Normal(0, 0.2))
 
     # 4. Spatial Hyperparameters (Matching V3)
@@ -65,11 +65,17 @@ def car_model(y, E, A, alpha_max, bsmoke, bmen, binteraction):
     z_u = numpyro.sample('z_u', dist.Normal(0, 1).expand([n_lads]))
     z_e = numpyro.sample('z_e', dist.Normal(0, 1).expand([n_lads]))
 
-    # Precision matrix logic (Matching V3)
-    Q = jnp.diag(d) - alpha * A
-    L_Q = jnp.linalg.cholesky(Q + jnp.eye(n_lads) * 1e-6)
+    # --- 3. Standardized Precision Matrix ---
+    # We divide alpha by the actual lambda_max of your specific A matrix
+    Q = jnp.diag(d) - (alpha / lambda_max) * A
+    
+    # --- 4. Numerical Stability & Sampling ---
+    # 1e-5 jitter is the "sweet spot" for stratified CAR models
+    L_Q = jnp.linalg.cholesky(Q + jnp.eye(n_lads) * 1e-5)
+    
+    # Non-centered reparameterization (The z_u trick)
     u_std_raw = solve_triangular(L_Q, z_u, lower=True, trans='T')
-    u_std = u_std_raw - jnp.mean(u_std_raw) 
+    u_std = u_std_raw - jnp.mean(u_std_raw)  # Centering the spatial effects 
     
     # Combined effect for 318 districts
     u_lads = sigma * (jnp.sqrt(rho) * u_std + jnp.sqrt(1 - rho) * z_e)

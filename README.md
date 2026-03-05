@@ -42,12 +42,16 @@ python -m lung_cancer_spatial.inference.run_car \
 ``` 
 #### Running CAR model (Smoking and Gender Covariate Version)
 ```bash 
-python src/lung_cancer_spatial/inference/run_car_v4.py \
-    --warmup 2000 \
-    --samples 2000 \
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src && \
+python -m lung_cancer_spatial.inference.run_car_v4 \
+    --inputs data/processed/inputs_v4_stratified.csv \
+    --adj data/processed/spatial_structure.pkl \
+    --out_dir outputs \
+    --warmup 3000 \
+    --samples 3000 \
     --chains 4 \
-    --out_dir /Users/alydiaowens/Projects/uk-lung-cancer-spatial/outputs \
-    --adj data/processed/spatial_structure.pkl
+    --target_accept 0.95 && \
+python /Users/alydiaowens/Projects/uk-lung-cancer-spatial/scripts/car_generate_report_v4.py
 ```
 
 ### 3. Reporting Model Results 

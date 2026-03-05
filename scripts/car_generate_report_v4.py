@@ -54,7 +54,7 @@ def main():
     gdf = gpd.GeoDataFrame(areas, geometry=areas['geometry'].apply(lambda x: wkb.loads(x) if isinstance(x, bytes) else x))
 
     # 2. Extract Diagnostics & Stats
-    var_names = ["b0", "beta_smoke", "beta_men", "beta_interaction", "sigma", "rho"]
+    var_names = ["b0", "beta_smoke", "beta_men", "beta_interaction", "sigma", "rho", "alpha"]
     stats = az.summary(idata, var_names=var_names)
     waic = az.waic(idata, scale="deviance")
     loo = az.loo(idata, scale="deviance")
@@ -91,11 +91,14 @@ def main():
         pdf.savefig(); plt.close()
 
         # Page 3: Posterior Distributions (Combined with spacing)
-        fig, ax = plt.subplots(figsize=(10, 8))
-        az.plot_posterior(idata, var_names=var_names, ax=ax)
-        plt.suptitle("Posterior Distributions", fontsize=14, fontweight='bold')
-        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-        pdf.savefig(); plt.close()
+        # --- Pages 3-9: Individual Posterior Distributions ---
+        # This loop creates a dedicated page for each parameter
+        for var in var_names:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            az.plot_posterior(idata, var_names=[var], ax=ax)
+            ax.set_title(f"Posterior Distribution: {var}", fontsize=14, fontweight='bold')
+            plt.tight_layout()
+            pdf.savefig(); plt.close()
 
         # Page 4: Trace Plots (Combined onto one sheet)
         az.plot_trace(idata, var_names=var_names)
@@ -126,7 +129,7 @@ def main():
         for metric, cmap, label in [
             (f"rr_{gender}", "coolwarm", "Relative Risk"),
             (f"prob_{gender}", "YlOrRd", "Exceedance Prob P(RR > 1)"),
-            (f"unc_{gender}", "viridis", "Uncertainty (95% HDI Width)")
+            (f"unc_{gender}", "Purples", "Uncertainty (95% HDI Width)")
         ]:
             fig, ax = plt.subplots(1, 1, figsize=(10, 10))
             norm = mcolors.TwoSlopeNorm(vcenter=1.0) if "rr" in metric else None

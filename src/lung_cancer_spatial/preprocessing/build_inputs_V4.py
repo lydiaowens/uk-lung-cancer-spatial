@@ -81,13 +81,18 @@ def build_v4_inputs():
     
     # --- 6. COVARIATE GENERATION ---
     df_v4['bmen'] = (df_v4['Gender'] == 'Men').astype(int)
+    # 1. First Z-score
     df_v4['bsmoke'] = (df_v4['Smoking_Prev'] - smoke_mean) / smoke_std
-    df_v4['binteraction'] = df_v4['bsmoke'] * df_v4['bmen']
 
-    # Final Catch-All: Fill any remaining NaNs in bsmoke/binteraction with 0
+    # 2. Fill NaNs in the base column with 0 (the population average)
     df_v4['bsmoke'] = df_v4['bsmoke'].fillna(0)
-    df_v4['binteraction'] = df_v4['binteraction'].fillna(0)
 
+    # 3. THEN center for the V4.6 signature
+    # This ensures the mean is calculated on a complete, imputed column
+    df_v4['bsmokecentered'] = df_v4['bsmoke'] - df_v4['bsmoke'].mean()
+
+    # 4. Final safety check (should already be 0, but good for catch-all)
+    df_v4['bsmokecentered'] = df_v4['bsmokecentered'].fillna(0)
     # --- 7. SAVE SCALING METADATA ---
     scaling_metadata = {
         'smoking_mean': float(smoke_mean),

@@ -1,10 +1,39 @@
-# Modeling lung cancer mortality in the UK using Bayesian GP and CAR methods 
+# Modeling lung cancer mortality in the UK using Bayesian GP and CAR Methods
+
+🌍 Project Overview: Stratified Spatial Modeling of UK Lung Cancer Risk
+
+This research project develops a high-resolution, Bayesian geographic framework to investigate the drivers of lung cancer mortality across 318 Local Authority Districts (LADs) in the United Kingdom. By integrating demographic stratification and advanced spatial priors, the project quantifies how the relationship between smoking prevalence and mortality risk varies across geographic and gendered boundaries.
+
+🔬 Methodology & Model Evolution
+
+The project utilizes a hierarchical Bayesian framework implemented in JAX and NumPyro, comparing global spatial trends against local district-level variations.
+
+CAR (Conditional Autoregressive) Models: 
+
+Utilizing BYM2 priors to decompose spatial risk into structured geographic trends and unstructured "white noise" components.
+
+GP (Gaussian Process) Models: 
+
+Employing continuous spatial kernels (Matern/RBF) to identify long-range spatial dependencies and non-linear risk surfaces.
+
+Version History
+
+V3.0 (Baseline): Initial district-level spatial analysis.
+
+V4.0 (Stratified): Transitioned to a 636-observation dataset to include gender-specific interactions.
+
+V4.5 (Production): Current state-of-the-art. Implements Effect Coding (-0.5, 0.5) and Centered Interactions to resolve multicollinearity, and utilizes an Inverse-Gamma prior for spatial variance ($\sigma$) to ensure convergence stability.
+
+💡 Why This Project Matters
+
+Health Equity: By stratifying by gender, the model identifies specific regions where public health interventions (like smoking cessation programs) may yield disproportionate benefits for specific sub-populations.
+
+Statistical Rigor: The transition to Version 4.5 addresses the "Neal's Funnel" and parameter interference common in high-dimensional spatial models, providing a blueprint for stable MCMC convergence in complex epidemiological datasets.
+
+Policy Support: The output generates Exceedance Probability Maps—a critical tool for policymakers to visualize districts where the relative risk of mortality significantly exceeds the national average with 95% statistical certainty.
+
 
 ---
-### Latest Versions: 
-CAR model: Version 3, located in car.py 
-
-GP model: Version 3, located in gp.py 
 
 # CAR Model: 
 ## Maps: 

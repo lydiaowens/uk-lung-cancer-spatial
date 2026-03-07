@@ -1,176 +1,284 @@
-# Modeling lung cancer mortality in the UK using Bayesian GP and CAR Methods
+# Modeling Lung Cancer Mortality in the UK using Bayesian GP and CAR Methods🌍
 
-🌍 Project Overview: Stratified Spatial Modeling of UK Lung Cancer Risk
+![Exceedance Prob P(RR>1) for V4.8](reports/figures/car_figures/car_figures_v4_8/shared_prob.png)
+
+## Abstract
+
+This project implements a Bayesian spatial epidemiological framework to model lung cancer mortality across the United Kingdom's 318 Local Authority Districts. Utilizing Conditional Autoregressive (CAR) and Gaussian Process (GP) models in JAX and NumPyro, it quantifies spatial risk patterns while accounting for demographic covariates like gender and smoking prevalence, enabling precise identification of high-risk regions for public health interventions.
+
+## Badges
+
+![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
+![NumPyro](https://img.shields.io/badge/NumPyro-0.13+-orange.svg)
+![JAX](https://img.shields.io/badge/JAX-0.4+-lightblue.svg)
+![Bayesian Modeling](https://img.shields.io/badge/Bayesian-Modeling-green.svg)
+
+## Status
+
+ENAR 2026 Poster Presentation
+
+**Poster Session Title:** Spatial and Spatiotemporal Data Analysis  
+**Poster Session ID#:** 9k  
+**Presentation Title:** Comparing Bayesian Conditional Autoregressive and Gaussian Process Spatial Models for Lung Cancer Mortality in the United Kingdom
+
+## Repository Architecture
+
+```
+uk-lung-cancer-spatial/
+├── 00_legacy/
+│   ├── 00_legacy/
+│   │   └── aggregated_lung_models/
+│   │       ├── agg_car/
+│   │       ├── agg_gp/
+│   │       ├── CAR_model/
+│   │       │   └── plots/
+│   │       └── GP_model/
+│   │           └── plots/
+│   └── Regions-Dec23/
+│       └── Regions-Dec2023/
+├── data/
+│   ├── processed/
+│   └── raw/
+│       └── Local_Authority_Districts_December_2023_Boundaries_UK_BFC_9042356933902664268/
+├── logs/
+├── notebooks/
+├── outputs/
+├── reports/
+│   ├── car_reports/
+│   │   └── figures/
+│   │       └── car_figures/
+│   │           ├── car_figures_v3/
+│   │           ├── car_figures_v4/
+│   │           ├── car_figures_v4_8/
+│   │           ├── car_figures_v4.5/
+│   │           ├── car_figures_v4.6/
+│   │           └── ...
+│   └── gp_figures/
+├── scripts/
+├── src/
+│   └── lung_cancer_spatial/
+│       ├── inference/
+│       ├── models/
+│       ├── preprocessing/
+│       └── viz/
+└── tests/
+```
+
+## Table of Contents
+
+- [Abstract](#abstract)
+- [Badges](#badges)
+- [Status](#status)
+- [Repository Architecture](#repository-architecture)
+- [Project Overview](#project-overview)
+- [Data Sources](#data-sources)
+- [Methodology & Model Evolution](#🔬-methodology--model-evolution)
+- [Model Diagrams](#model-diagrams)
+- [Version History](#📌-version-history)
+- [Why This Project Matters](#💡-why-this-project-matters)
+- [Model Diagnostics](#model-diagnostics)
+- [How to Run](#🚀-how-to-run)
+- [Outputs](#📊-outputs)
+- [Map Interpretations](#📊-map-interpretations)
+- [Citation](#citation)
+- [Acknowledgments](#acknowledgments)
+
+
+## Project Overview
 
 This research project develops a high-resolution, Bayesian geographic framework to investigate the drivers of lung cancer mortality across 318 Local Authority Districts (LADs) in the United Kingdom. By integrating demographic stratification and advanced spatial priors, the project quantifies how the relationship between smoking prevalence and mortality risk varies across geographic and gendered boundaries.
 
-🔬 Methodology & Model Evolution
+## Data Sources
+
+The analysis integrates publicly available UK health and geographic datasets.
+
+• UK Office for National Statistics (ONS)  
+  - Lung cancer mortality counts by district
+
+• UK Population Estimates (ONS)
+
+• Local Authority District boundaries (ONS Geoportal)
+
+• District-level smoking prevalence estimates
+
+## 🔬 Methodology & Model Evolution
 
 The project utilizes a hierarchical Bayesian framework implemented in JAX and NumPyro, comparing global spatial trends against local district-level variations.
 
-CAR (Conditional Autoregressive) Models: 
+### CAR (Conditional Autoregressive) Models
 
-Utilizing BYM2 priors to decompose spatial risk into structured geographic trends and unstructured "white noise" components.
+Utilizing BYM2 priors to decompose spatial risk into structured geographic trends and unstructured "white noise" components. V4.8 implements a non-centered reparameterization to ensure 1.000 R-hat convergence.
 
-GP (Gaussian Process) Models: 
+### GP (Gaussian Process) Models
 
-Employing continuous spatial kernels (Matern/RBF) to identify long-range spatial dependencies and non-linear risk surfaces.
+Employing continuous spatial kernels (Matérn 3/2) to identify long-range spatial dependencies. V4 utilizes a Cholesky-based non-centered parameterization to handle the high posterior correlation between length-scale and variance.
 
-Version History
+## Model Diagrams
 
-V3.0 (Baseline): Initial district-level spatial analysis.
+### CAR v4.8 Model Structure
 
-V4.0 (Stratified): Transitioned to a 636-observation dataset to include gender-specific interactions.
+```
+Covariates (bsmoke, bmen, binteraction)
+    ↓
+beta_smoke, beta_men, beta_interaction
+    ↓
+eta = log(E) + b0 + betas * covariates + u_stratified
+    ↓
+lambda = exp(eta)
+    ↓
+y ~ Poisson(lambda)
 
-V4.5 (Production): Current state-of-the-art. Implements Effect Coding (-0.5, 0.5) and Centered Interactions to resolve multicollinearity, and utilizes an Inverse-Gamma prior for spatial variance ($\sigma$) to ensure convergence stability.
-
-💡 Why This Project Matters
-
-Health Equity: By stratifying by gender, the model identifies specific regions where public health interventions (like smoking cessation programs) may yield disproportionate benefits for specific sub-populations.
-
-Statistical Rigor: The transition to Version 4.5 addresses the "Neal's Funnel" and parameter interference common in high-dimensional spatial models, providing a blueprint for stable MCMC convergence in complex epidemiological datasets.
-
-Policy Support: The output generates Exceedance Probability Maps—a critical tool for policymakers to visualize districts where the relative risk of mortality significantly exceeds the national average with 95% statistical certainty.
-
-
----
-
-# CAR Model: 
-## Maps: 
-  Three maps were developed for the CAR model to understand estimated relative risk, hotspot probability, and model uncertainty. 
-  1. Estimated Relative Risk (v3_map_mean_rr.png)
-    This map shows the geographic multiplier of lung cancer risk. Values near 1 (shown in white and gray) show that the risk in that district is exactly the national average, while values above 1.0 in red show LADs with elevated risk. An RR of 1.5 means this LAD experiences 50% more cases than expected. Districts with values below 1 have a "protective" effect or lower than average risk of lung cancer mortality. 
-  
-  2. Hotspot Probability (v3_map_exceedance.png)
-    This map shows the Bayesian "Exceedance Probability", which measures how certain the model is that a district is a true hotspot of lung cancer mortality. Specifically, it shows the probability of the relative risk being above 1 (P(RR>1.0)). Values 0.95-1.0 are highlighted in dark red while values 0.0-0.05 are in white, with yellow districts being inconclusive.
-
-  3. Model Uncertainty (v3_map_uncertainty.png)
-    This map shows the standard deviation of the Relative Risk estimates for each LAD by illustrating the posterior standard deviation. Areas with high uncertainty (usually corresponding with low population districts) are in dark purple, while areas in light purple/white are high precision areas. 
-
-## Code: 
-### 1. Build Processed Inputs
-#### Disease-mapping (population exposure model)
-```bash 
-python -m lung_cancer_spatial.preprocessing.build_inputs \
-  --shapefile data/raw/Local_Authority_Districts_December_2023_Boundaries_UK_BFC_9042356933902664268/LAD_DEC_2023_UK_BFC.shp \
-  --deaths_csv data/raw/2023mortality.csv \
-  --pop_csv data/raw/2023population.csv \
-  --E_mode population \
-  --out_dir data/processed
-  ```
-
-### 2. Running Model with Inputs 
-#### Running CAR model (population exposure version)
-```bash 
-python -m lung_cancer_spatial.inference.run_car \
-  --inputs_npz data/processed/inputs_car_population.npz \
-  --out_nc outputs/idata_car_population.nc \
-  --warmup 1500 \
-  --samples 2000 \
-  --chains 4
-``` 
-#### Running CAR model (Smoking and Gender Covariate Version)
-```bash 
-export PYTHONPATH=$PYTHONPATH:$(pwd)/src && \
-python -m lung_cancer_spatial.inference.run_car_v4 \
-    --inputs data/processed/inputs_v4_stratified.csv \
-    --adj data/processed/spatial_structure.pkl \
-    --out_dir outputs \
-    --warmup 3000 \
-    --samples 3000 \
-    --chains 4 \
-    --target_accept 0.95 && \
-python /Users/alydiaowens/Projects/uk-lung-cancer-spatial/scripts/car_generate_report_v4.py
+Spatial Effects:
+A (adjacency matrix) → alpha → Q (precision matrix) → L_Q (Cholesky) → u_std → u_lads → u_stratified
+z_u, z_e → u_lads (scaled by sigma, rho)
 ```
 
-### 3. Reporting Model Results 
-#### Generating CAR Model Report (Population Exposure version)
+### GP v4 Model Structure
+
+```
+Covariates (bsmoke, bmen, binteraction)
+    ↓
+beta_smoke, beta_men, beta_interaction
+    ↓
+eta = log(E) + b0 + betas * covariates + f_stratified
+    ↓
+lambda = exp(eta)
+    ↓
+y ~ Poisson(lambda)
+
+GP Effects:
+X (coordinates) → K (Matern 3/2 kernel) → L (Cholesky) → f_lads → f_stratified
+kernel_var, kernel_ls → K
+z → f_lads
+```
+
+## 📌 Version History
+
+V3.0 (Baseline): Initial district-level spatial analysis (318 observations).
+
+V4.0 - V4.7: Iterative development of stratified models. Resolved "Neal's Funnel" pathologies.
+
+V4.8 (Current Production):
+
+- Effect Coding: Gender centered at [-0.5, 0.5].
+- Centered Covariates: Smoking centered around the UK mean to stabilize the intercept.
+- Strict Interaction Prior: $N(0, 0.03)$ to prevent parameter interference with spatial effects.
+- BYM2 Scaling: Normalizes spatial variance for unit-agnostic interpretation.
+
+## 💡 Why This Project Matters
+
+Health Equity: Identifies specific regions where environmental risk persists after adjusting for lifestyle (smoking).
+
+Statistical Rigor: Achieves perfect MCMC convergence (R-hat 1.000) on complex, non-linear spatial surfaces.
+
+Policy Support: Generates Exceedance Probability Maps—visualizing districts where the relative risk significantly exceeds the national average with 95% statistical certainty.
+
+## Model Diagnostics
+
+The final CAR model (V4.8) satisfies all convergence diagnostics:
+
+• Max R̂ = 1.000  
+• Divergences = 0  
+• Effective Sample Size > 2800  
+
+Posterior predictive checks and spatial uncertainty maps are included in the generated reports.
+
+## Acknowledgments
+
+This work benefited from the guidance of Dr. Seth Flaxman and the support of the Machine Learning and Global Health Network. Appreciation is also extended to Jesus College for sponsoring the summer internship that made this project possible.
+Additional thanks to the Morehead Cain Foundation for their financial support during the research period.
+
+## 🚀 How to Run
+
+### 1. Environment Setup
+
 ```bash
-python scripts/car_generate_report.py \
-    --input outputs/idata_car_population_v3.nc \
-    --filename car_model_report_v3.pdf \
-    --warmup 1500
-```
-#### Generating CAR Model Report (Smoking and Gender Covariate Version)
-```bash 
-export PYTHONPATH=$PYTHONPATH:$(pwd)/src && \
-python scripts/car_generate_report_v4.py \
-    --input_nc /Users/alydiaowens/Projects/uk-lung-cancer-spatial/outputs/idata_car_v4.nc \
-    --metadata data/processed/v4_scaling_metadata.pkl
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies and set path
+pip install -r requirements.txt
+export PYTHONPATH=$PYTHONPATH:$(pwd)/src
 ```
 
-# GP Model: 
-## Maps: 
-Three maps were developed for the GP model to visualize the continuous spatial risk surface, hotspot probability, and posterior precision. Unlike the CAR model, these maps highlight risk that "flows" across administrative boundaries based on geographic distance.
+### 2. CAR Pipeline (V4.8 - Final Covariate Model)
 
-1. Estimated Relative Risk (gp_map_v3_rr_final.png)
-2. Hotspot Probability (gp_map_v3_exceedance_final.png)
-3. Model Uncertainty (gp_map_v3_uncertainty_final.png)
+To run the production-grade CAR model with 2000/2000 iterations and generate the polished audit report:
 
-## Code: 
-### 2. Running Model with Inputs 
-#### Running GP model 
-```bash 
-python src/lung_cancer_spatial/inference/run_gp.py \
-    --version v3 \
+```bash
+# Run Inference
+python src/lung_cancer_spatial/inference/run_car_v4_gen.py \
+    --model_ver v4_8 \
     --warmup 2000 \
-    --samples 2000 \
-    --chains 3 \
-    --target_accept 0.95
+    --samples 2000
+
+# Generate Visual Report (Centered RR & Shared Probability Maps)
+python scripts/car_generate_report_v4_gen.py --input_nc outputs/idata_car_v4_8.nc
 ```
 
-### 3. Reporting Model Results 
-#### Generating GP Model Report 
+### 3. GP Pipeline (V4.0 - Matérn Covariate Model)
+
+To run the continuous spatial model using standardized coordinates and non-centered sampling:
+
 ```bash
-python scripts/gp_generate_report.py --version v3
+# Run GP Inference (Requires higher target_accept)
+python src/lung_cancer_spatial/inference/run_gp_gen.py \
+    --warmup 3000 \
+    --samples 2000 \
+    --target_accept 0.98
+
+# Generate GP Audit Report
+python scripts/gp_generate_report_gen.py --input_pkl outputs/samples_gp_v4.pkl
 ```
 
+## 📊 Outputs
 
-### Version Notes 
-> **CAR Version 2**: Note: Version 2 of CAR model was introduced with an spatial dependence parameter (alpha) Max contsraint and we replaced the standard Multivariate Normal (MVN) sampling with a manual "Cholesky" decomposition and a standard normal noise vector z_u.
->
-> **CAR Version 3**:  Note: Version 3 of CAR model uses a sum-to-zero constraint of u_spatial to ensure spatial effects don't drift and adds a rho parameter from the Besag-York-Mollie (BYM) 2 model framework to help with divergence issues. The geometric mean scaling factor is assumed to be ~1. Spatial connectivity was enforced by identifying topological islands in the UK and manually bridging them to the nearest mainlaind centroids to ensure a non-singular precision matrix and enable Cholesky factorization. 
+Running the pipelines generates comprehensive reports and visualizations stored in the `reports/` and `outputs/` directories.
 
-> **GP Version 3**: Note: Version 3 of GP model transitions from RBF to a Matern 3/2 kernel to prevent overfitting seen in legacy iterations. To ensure numerical stability and convergence, the model uses an increased diagonal jitter (1x10^-4) and utilizes a dense mass matrix during NUTS sampling to account for high posterior correlation between length-scale and variance parameters. Coordinates are standardized to align with Gamma(3,2) length-scale prior, ensuring the identified spatial clusters remain physically meaningful.
+### CAR Model Outputs (V4.8)
+- **Inference Data**: NetCDF files in `outputs/` (e.g., `idata_car_v4_8.nc`) containing MCMC samples, diagnostics, and posterior distributions.
+- **Audit Reports**: PDF reports in `reports/car_reports/` with convergence statistics, parameter estimates, and model validation metrics.
+- **Visual Maps**: PNG images in `reports/figures/car_figures/car_figures_v4_8/` including:
+  - Relative Risk Map
+  - Exceedance Probability Map
+  - Uncertainty Map
 
+![CAR Relative Risk Map](reports/figures/car_figures/car_figures_v4_8/shared_rr.png)
 
-<details>
-    <summary> Click to expand: CAR Model (Internal Standardization Method, Not Used) </summary>
+### GP Model Outputs (V4.0)
+- **Samples**: Pickle files in `outputs/` (e.g., `samples_gp_v4.pkl`) with posterior samples.
+- **Audit Reports**: PDF reports in `reports/gp_reports/` detailing model performance.
+- **Visual Maps**: PNG images in `reports/figures/gp_figures/` showing spatial risk surfaces.
 
-    Disease-mapping version (internal standardization) 
+![GP Relative Risk Map](reports/figures/gp_figures/gp_map_v3_rr_final.png)
 
-    ```bash
-    python -m lung_cancer_spatial.preprocessing.build_inputs \
-    --shapefile data/raw/Local_Authority_Districts_December_2023_Boundaries_UK_BFC_9042356933902664268/LAD_DEC_2023_UK_BFC.shp \
-    --deaths_csv data/raw/2023mortality.csv \
-    --pop_csv data/raw/2023population.csv \
-    --E_mode expected \
-     --out_dir data/processed
-    ``` 
+These outputs enable policymakers to identify high-risk areas and inform targeted public health interventions.
 
+## 📊 Map Interpretations
 
-    Running CAR model (disease mapping/internal standardization) 
-    ```bash 
-    python -m lung_cancer_spatial.inference.run_car \
-    --inputs_npz data/processed/inputs_car_expected.npz \
-    --out_nc outputs/idata_car_expected.nc \
-    --warmup 1500 \
-    --samples 2000 \
-    --chains 4
-    ```
-</details>
+| Map Type | Interpretation | Visual Key |
+|----------|----------------|------------|
+| Relative Risk (RR) | Geographic multiplier of cancer risk. | $1.0$ (Neutral/Gray), $>1.0$ (High Risk/Red) |
+| Exceedance Prob | Confidence that RR > 1.0. | $>0.95$ (Statistical Hotspot/Deep Red) |
+| Uncertainty | Width of 95% HDI. | Dark Purple (Lower Precision/Low Pop) |
 
 <details>
-  <summary> Version History </summary>
-    The Model Evolution: From Baseline to V3/V2CAR Model (Neighborhood-Discrete)V1/V2 Baseline: 
-    
-    Initially utilized a standard CAR prior with a generic precision matrix. While it captured broad regional trends, the mixing of spatial and unstructured noise was unconstrained, making it difficult to quantify how much of the lung cancer risk was truly "geographic."Refinement to V3: I moved to a BYM2 (Besag-York-Mollié) formulation. This allowed for the introduction of the $\rho$ (rho) parameter to explicitly partition the variance. I also enforced a sum-to-zero constraint on the spatial effects for identifiability.
-    
-    Result: This transition produced a much more stable model with a clear spatial fraction of 0.985, providing the statistical "green light" to move forward with covariate analysis.
-    
-    Gaussian Process (Distance-Continuous)V1 Legacy: The initial GP used a Squared Exponential (RBF) kernel with a LogNormal(1000, 0.5) prior on the length-scale. Because the coordinates were standardized, this prior was mismatched with the data scale, causing the model to overfit the local noise (the "nugget" effect) rather than the regional signal.
-    
-    Refinement to V3: I have pivoted to a Matérn 3/2 kernel. This is a more robust choice for public health data as it allows for slightly "rougher" transitions, preventing the over-oscillations seen in the RBF version. I also re-scaled the length-scale prior to align with the standardized coordinate space, and used a Poisson likelihood with exposure.
-    
-    Result: This V3 GP now produces a "smoothed" risk surface that captures the industrial corridors of the North without hugging every individual district's data point, making it a much more credible comparison to the CAR results.
+<summary> 🛠 Technical Deep Dive: V4.8 vs V3 </summary>
+
+Why we moved to V4.8:
+
+In V3, the model was purely descriptive. V4.8 allows us to ask: "Does this district have high cancer rates because of high smoking, or because of where it is located?" By centering smoking prevalence:
+
+- The Intercept ($b_0$) now represents a "Generic UK Human."
+- The Spatial Field ($u$) now represents Residual Risk (Environmental/Structural factors).
+
 </details>
+
+## Citation
+
+If you use this repository or modeling framework, please cite:
+
+Owens, Allison L. (2026).  
+Bayesian Spatial Modeling of Lung Cancer Mortality in the United Kingdom.  
+University of Oxford / University of North Carolina.

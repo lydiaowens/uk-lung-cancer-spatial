@@ -1,6 +1,8 @@
 import streamlit as st
 import leafmap.foliumap as leafmap
 import geopandas as gpd
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 
 # ==========================================
 # 1. Page Setup & Styling
@@ -85,20 +87,19 @@ col_map1, col_map2 = st.columns(2)
 
 with col_map1:
     st.subheader("📍 Relative Risk (RR)")
-    st.subheader("📍 Relative Risk (RR)")
     m1 = leafmap.Map(center=[54.5, -2], zoom=6, draw_control=False, measure_control=False)
     
-    # Manually generating colors to prevent the Leafmap indexing error
     rr_bins = [0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]
-    # We need n_bins + 1 colors
-    rr_colors = [mcolors.to_hex(plt.cm.RdBu_r(i/len(rr_bins))) for i in range(len(rr_bins) + 1)]
+    # Robust hex conversion: map the float (0-1) to RGBA, then to hex string
+    cmap_rdbu = plt.get_cmap("RdBu_r")
+    rr_colors = [mcolors.rgb2hex(cmap_rdbu(i / len(rr_bins))) for i in range(len(rr_bins) + 1)]
 
     m1.add_data(
         gdf, 
         column=f"rr{suffix}", 
         scheme="UserDefined", 
         classification_kwds={'bins': rr_bins}, 
-        colors=rr_colors, # Pass explicit hex codes
+        colors=rr_colors, 
         legend_title="Relative Risk (1.0 = Baseline)",
         layer_name="Relative Risk"
     )
@@ -109,14 +110,15 @@ with col_map2:
     m2 = leafmap.Map(center=[54.5, -2], zoom=6, draw_control=False, measure_control=False)
     
     ep_bins = [0.2, 0.5, 0.8, 0.95]
-    ep_colors = [mcolors.to_hex(plt.cm.YlOrRd(i/len(ep_bins))) for i in range(len(ep_bins) + 1)]
+    cmap_ylorrd = plt.get_cmap("YlOrRd")
+    ep_colors = [mcolors.rgb2hex(cmap_ylorrd(i / len(ep_bins))) for i in range(len(ep_bins) + 1)]
 
     m2.add_data(
         gdf, 
         column=f"ep{suffix}", 
         scheme="UserDefined", 
         classification_kwds={'bins': ep_bins}, 
-        colors=ep_colors, # Pass explicit hex codes
+        colors=ep_colors, 
         legend_title="Pr(RR > 1.0)",
         layer_name="Exceedance"
     )

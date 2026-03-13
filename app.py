@@ -85,15 +85,20 @@ col_map1, col_map2 = st.columns(2)
 
 with col_map1:
     st.subheader("📍 Relative Risk (RR)")
+   st.subheader("📍 Relative Risk (RR)")
     m1 = leafmap.Map(center=[54.5, -2], zoom=6, draw_control=False, measure_control=False)
     
-    # Matching exactly with the poster's 0.2 to 1.8 scale
+    # Manually generating colors to prevent the Leafmap indexing error
+    rr_bins = [0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]
+    # We need n_bins + 1 colors
+    rr_colors = [mcolors.to_hex(plt.cm.RdBu_r(i/len(rr_bins))) for i in range(len(rr_bins) + 1)]
+
     m1.add_data(
         gdf, 
         column=f"rr{suffix}", 
         scheme="UserDefined", 
-        classification_kwds={'bins': [0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]}, 
-        cmap="RdBu_r", 
+        classification_kwds={'bins': rr_bins}, 
+        colors=rr_colors, # Pass explicit hex codes
         legend_title="Relative Risk (1.0 = Baseline)",
         layer_name="Relative Risk"
     )
@@ -103,13 +108,15 @@ with col_map2:
     st.subheader("🔥 Exceedance Probabilities")
     m2 = leafmap.Map(center=[54.5, -2], zoom=6, draw_control=False, measure_control=False)
     
-    # Custom bins to highlight the 0.95 "Near-Certain" threshold
+    ep_bins = [0.2, 0.5, 0.8, 0.95]
+    ep_colors = [mcolors.to_hex(plt.cm.YlOrRd(i/len(ep_bins))) for i in range(len(ep_bins) + 1)]
+
     m2.add_data(
         gdf, 
         column=f"ep{suffix}", 
         scheme="UserDefined", 
-        classification_kwds={'bins': [0.2, 0.5, 0.8, 0.95]}, 
-        cmap="YlOrRd", 
+        classification_kwds={'bins': ep_bins}, 
+        colors=ep_colors, # Pass explicit hex codes
         legend_title="Pr(RR > 1.0)",
         layer_name="Exceedance"
     )

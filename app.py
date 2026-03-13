@@ -85,7 +85,7 @@ col_map1, col_map2 = st.columns(2)
 
 with col_map1:
     st.subheader("📍 Relative Risk (RR)")
-   st.subheader("📍 Relative Risk (RR)")
+    st.subheader("📍 Relative Risk (RR)")
     m1 = leafmap.Map(center=[54.5, -2], zoom=6, draw_control=False, measure_control=False)
     
     # Manually generating colors to prevent the Leafmap indexing error

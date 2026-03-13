@@ -47,5 +47,7 @@ def gp_model(X, y=None, E=None):
     mu = E * jnp.exp(eta)
     numpyro.sample("obs", dist.Poisson(mu), obs=y)
 
+    numpyro.deterministic("log_like", dist.Poisson(mu).log_prob(y))
+
     # Deterministic for the Viz script
     numpyro.deterministic("RR", jnp.exp(f)) # This is the Relative Risk centered at 1.0

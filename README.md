@@ -2,6 +2,10 @@
 
 ![Exceedance Prob P(RR>1) for V4.8](reports/figures/car_figures/car_figures_v4_8/shared_prob.png)
 
+⚠️ Researcher Note: This repository is currently in the pre-publication review phase. While the underlying Bayesian models (CAR v4.8 and GP v4.0) are finalized, the scripts and documentation are undergoing a final audit for clarity and optimization.
+
+🤖 Transparency Statement: Agentic AI (Gemini) was utilized as a collaborative partner in this project to assist with LaTeX formatting for poster materials, Python dashboard architecture (Streamlit), and data restructuring processes. All scientific logic and model implementations were verified by the primary researcher.
+
 ## Abstract
 
 This project implements a Bayesian spatial epidemiological framework to model lung cancer mortality across the United Kingdom's 318 Local Authority Districts. Utilizing Conditional Autoregressive (CAR) and Gaussian Process (GP) models in JAX and NumPyro, it quantifies spatial risk patterns while accounting for demographic covariates like gender and smoking prevalence, enabling precise identification of high-risk regions for public health interventions.

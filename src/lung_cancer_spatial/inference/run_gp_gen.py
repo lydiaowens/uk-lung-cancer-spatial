@@ -41,16 +41,29 @@ def main():
     kernel = NUTS(gp_model_v4, target_accept_prob=args.target_accept, init_strategy=init_to_median)
     mcmc = MCMC(kernel, num_warmup=args.warmup, num_samples=args.samples, num_chains=args.chains)
 
-    print(f"🚀 Launching GP V4 | {args.warmup}/{args.samples} | Target: {args.target_accept}")
-    mcmc.run(jax.random.PRNGKey(42), X=X, y=y, E=E, bsmoke=bsmoke, bmen=bmen, binteraction=bint)
+    print(f"🚀 Launching GP V4 (Stratified) | Chains: {args.chains} | Target: {args.target_accept}")
+    print("📊 Tracking Pointwise Log-Likelihood for WAIC...")
+    
+    # Ensure all keyword arguments match the gp_model_v4 signature exactly
+    mcmc.run(
+        jax.random.PRNGKey(42), 
+        X=X, 
+        y=y, 
+        E=E, 
+        bsmoke=bsmoke, 
+        bmen=bmen, 
+        binteraction=bint
+    )
 
     # 4. Save Outputs
+    # get_samples() automatically includes the 'log_like' deterministic site
     samples = mcmc.get_samples()
     out_path = BASE_DIR / "outputs/samples_gp_v4.pkl"
+    
     with open(out_path, "wb") as f:
         pickle.dump(samples, f)
     
-    print(f"✅ GP Inference Complete: {out_path}")
-
+    print(f"✅ Inference Complete. Log-likelihood stored for WAIC calculation.")
+    print(f"📂 Output saved to: {out_path}")
 if __name__ == "__main__":
     main()

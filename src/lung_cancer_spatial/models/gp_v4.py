@@ -70,3 +70,5 @@ def gp_model_v4(X, y, E, bsmoke, bmen, binteraction):
 
     # Deterministic for RR reporting
     numpyro.deterministic('rr', jnp.exp(eta - jnp.log(E)))
+
+    numpyro.deterministic('log_like', dist.Poisson(expected_rate).log_prob(y))

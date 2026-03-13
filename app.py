@@ -89,10 +89,14 @@ with col_map1:
     st.subheader("📍 Relative Risk (RR)")
     m1 = leafmap.Map(center=[54.5, -2], zoom=6, draw_control=False, measure_control=False)
     
+    # 1. Define Bins from Deepest Blue (0.2) to Deepest Red (1.8)
+    # 1.0 is the center pivot (White)
     rr_bins = [0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8]
-    # Robust hex conversion: map the float (0-1) to RGBA, then to hex string
-    cmap_rdbu = plt.get_cmap("RdBu_r")
-    rr_colors = [mcolors.rgb2hex(cmap_rdbu(i / len(rr_bins))) for i in range(len(rr_bins) + 1)]
+    
+    # 2. Use 'RdBu_r' for the standard Blue-to-Red gradient
+    # We generate hex codes for each bin to prevent internal classification errors
+    cmap_rdbu_r = plt.get_cmap("RdBu_r")
+    rr_colors = [mcolors.rgb2hex(cmap_rdbu_r(i / len(rr_bins))) for i in range(len(rr_bins) + 1)]
 
     m1.add_data(
         gdf, 
@@ -104,7 +108,6 @@ with col_map1:
         layer_name="Relative Risk"
     )
     m1.to_streamlit(height=600)
-
 with col_map2:
     st.subheader("🔥 Exceedance Probabilities")
     m2 = leafmap.Map(center=[54.5, -2], zoom=6, draw_control=False, measure_control=False)

@@ -1,5 +1,7 @@
 # Modeling Lung Cancer Mortality in the UK using Bayesian GP and CAR Methods🌍
 
+# Interactive Exploration: https://uk-lung-cancer-map.streamlit.app/
+
 ![Exceedance Prob P(RR>1) for V4.8](reports/figures/car_figures/car_figures_v4_8/shared_prob.png)
 
 ⚠️ Researcher Note: This repository is currently in the pre-publication review phase. While the underlying Bayesian models (CAR v4.8 and GP v4.0) are finalized, the scripts and documentation are undergoing a final audit for clarity and optimization.
